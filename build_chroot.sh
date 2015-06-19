@@ -1,17 +1,19 @@
 set -e -x
 
+export DEBIAN_FRONTEND=noninteractive
+
 sudo debootstrap wheezy ./chroot http://127.0.0.1:3142/http.debian.net/debian/
 
 echo "deb http://http.debian.net/debian wheezy-backports main" | sudo tee --append chroot/etc/apt/sources.list >/dev/null
 echo "deb http://ftp.de.debian.org/debian/ wheezy main contrib non-free" | sudo tee --append chroot/etc/apt/sources.list > /dev/null
 echo 'Acquire::http { Proxy "http://127.0.0.1:3142";};' | sudo tee chroot/etc/apt/apt.conf.d/50proxy
 echo 'Acquire::https{ Proxy "false"; } ; '  | sudo tee --append chroot/etc/apt/apt.conf.d/50proxy
-sudo chroot chroot apt-get upgrade -y
+sudo chroot chroot apt-get upgrade -q -y --force-yes
 
 
 
 
-sudo chroot chroot apt-get install -y --force-yes --no-install-recommends linux-image-amd64 curl sudo blackbox xserver-xorg-core xserver-xorg xinit xterm rungetty nvi iceweasel ca-certificates tmux live-boot-initramfs-tools live-boot live-config
+sudo chroot chroot apt-get install -q -y --force-yes --no-install-recommends linux-image-amd64 curl sudo blackbox xserver-xorg-core xserver-xorg xinit xterm rungetty nvi iceweasel ca-certificates tmux live-boot-initramfs-tools live-boot live-config
 
 sudo chroot chroot apt-get install -y --force-yes linux-image-amd64
 
@@ -60,19 +62,20 @@ echo "1:2345:respawn:/bin/login -f nem tty1 </dev/tty1 >/dev/tty1 2>&1" | sudo t
 echo 'startx' | sudo tee --append  chroot/home/nem/.bash_profile
 
 
-sudo tar -C chroot/usr/local/ -zxvf jre-8u45-linux-x64.tar.gz
-sudo tar -C chroot/home/nem/ -zxvf nis-ncc-0.6.31.tgz
+sudo tar -C chroot/usr/local/ -zxvf jre-*-linux-x64.tar.gz
+sudo mv chroot/usr/local/jre* chroot/usr/local/jre
+sudo tar -C chroot/home/nem/ -zxvf nis-ncc-*.tgz
 
 
 #echo "/usr/bin/xterm&"  | sudo tee chroot/home/nem/.xsession
-echo 'tmux new -d -s "nem" "cd /home/nem/package && PATH=/usr/local/jre1.8.0_45/bin/:$PATH ./nix.runNcc.sh"'   | sudo tee --append chroot/home/nem/.xsession
+echo 'tmux new -d -s "nem" "cd /home/nem/package && PATH=/usr/local/jre/bin/:$PATH ./nix.runNcc.sh"'   | sudo tee --append chroot/home/nem/.xsession
 echo "/usr/bin/blackbox&"  | sudo tee --append chroot/home/nem/.xsession
 echo "iceweasel http://127.0.0.1:8989"  | sudo tee --append chroot/home/nem/.xsession
 echo "sudo halt"  | sudo tee --append chroot/home/nem/.xsession
-echo 'PATH=$PATH:/usr/local/jre1.8.0_45/bin/' | sudo tee --append  chroot/home/nem/.bashrc
+echo 'PATH=$PATH:/usr/local/jre/bin/' | sudo tee --append  chroot/home/nem/.bashrc
 
 sudo chroot chroot mkdir -p /home/nem/nem/ncc 
-sudo cp wallets/* chroot/home/nem/nem/ncc/
+ls  wallets/* 2>/dev/null >/dev/null &&  sudo cp wallets/* chroot/home/nem/nem/ncc/
 sudo chroot chroot chown nem:nem /home/nem/nem -R
 
 
